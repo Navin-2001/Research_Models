@@ -21,5 +21,5 @@ RUN mkdir -p /app/uploads
 # Copy application files
 COPY . .
 
-# Start the FastAPI web server
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "10000"]
+# Start the FastAPI web server using Render's $PORT
+CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-10000}
