@@ -1,0 +1,21 @@
+{
+  "model_type": "GradientBoostingClassifier",
+  "trained_date": "2025-12-31T00:10:48.420830",
+  "features": [
+    "night_usage_pct",
+    "morning_check",
+    "late_night_days",
+    "daily_usage_hours",
+    "avg_session_min",
+    "binge_sessions",
+    "daily_checkins",
+    "avg_interval_min",
+    "weekend_spike"
+  ],
+  "stages": [
+    "Minimal",
+    "Low",
+    "Moderate",
+    "High"
+  ]
+}

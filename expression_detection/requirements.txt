@@ -1,0 +1,7 @@
+flask
+flask-cors
+opencv-python-headless
+tf-keras
+deepface
+tensorflow==2.16.2
+numpy<2.3.0

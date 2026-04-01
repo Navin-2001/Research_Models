@@ -1,0 +1,6 @@
+version: 2
+authtoken: 3AWGXcXO8ZMuOOMWqKKkYmB9WUk_7E4WqutN6c6xfMAAzi99q
+tunnels:
+  unified_api:
+    addr: 8000
+    proto: http

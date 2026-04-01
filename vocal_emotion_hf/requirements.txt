@@ -1,0 +1,18 @@
+# fastapi
+# uvicorn
+# python-multipart
+# transformers
+# torch
+# librosa
+# soundfile
+# numpy<2.0.0
+# pydub
+
+fastapi>=0.115.0
+uvicorn[standard]
+python-multipart
+transformers>=4.40.0
+librosa
+soundfile
+numpy<2.0.0
+pydub
