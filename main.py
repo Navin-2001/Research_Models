@@ -43,10 +43,15 @@ whisper_asr = None
 # 1. SHARED SETUP & FASTAPI EVENTS
 # ==========================================
 
-@app.on_event("startup")
-async def load_models():
-    """Load all ML models into memory to unify the endpoint."""
-    global voice_classifier, chat_emotion_classifier
+import asyncio
+import threading
+
+def _load_models_blocking():
+    """Load all ML models into memory synchronously (runs in background)."""
+    global voice_classifier, chat_emotion_classifier, whisper_asr
+    
+    logger.info("Starting up Unified ML Server...")
+    logger.info("Loading Models... This will take a moment.")
     
     logger.info("Starting up Unified ML Server...")
     logger.info("Loading Models... This will take a moment.")
@@ -79,6 +84,12 @@ async def load_models():
 
     # Setup FFmpeg for audio processing
     setup_ffmpeg()
+
+@app.on_event("startup")
+async def load_models():
+    """Start model loading in a background thread so Render binds the port immediately."""
+    logger.info("Server started immediately. Spawning background thread to load AI models...")
+    threading.Thread(target=_load_models_blocking, daemon=True).start()
 
 from pathlib import Path
 
