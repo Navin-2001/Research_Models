@@ -18,6 +18,18 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Create necessary directories
 RUN mkdir -p /app/uploads
 
+# Pre-download AI models during build to speed up runtime startup
+RUN python -c "from transformers import pipeline; \
+    pipeline('audio-classification', model='superb/wav2vec2-base-superb-er'); \
+    pipeline('text-classification', model='j-hartmann/emotion-english-distilroberta-base'); \
+    pipeline('automatic-speech-recognition', model='openai/whisper-tiny.en')"
+
+# Pre-download DeepFace models (VGG-Face is default)
+RUN python -c "from deepface import DeepFace; \
+    import os; \
+    os.makedirs(os.path.join(os.path.expanduser('~'), '.deepface', 'weights'), exist_ok=True); \
+    DeepFace.build_model('Emotion')"
+
 # Copy application files
 COPY . .
 
