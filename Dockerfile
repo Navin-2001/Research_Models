@@ -18,13 +18,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Create necessary directories
 RUN mkdir -p /app/uploads
 
-# Pre-download AI models during build to speed up runtime startup
-RUN python -c "from transformers import pipeline; \
-    pipeline('audio-classification', model='superb/wav2vec2-base-superb-er'); \
-    pipeline('text-classification', model='j-hartmann/emotion-english-distilroberta-base'); \
-    pipeline('automatic-speech-recognition', model='openai/whisper-tiny.en')"
-
-# Pre-download DeepFace models (Emotion model)
+# Pre-download DeepFace models (Emotion model) - Keeping this local as it's small/specific
 RUN python -c "from deepface import DeepFace; \
     import numpy as np; \
     DeepFace.analyze(img_path=np.zeros((224, 224, 3), dtype=np.uint8), actions=['emotion'], enforce_detection=False)"
