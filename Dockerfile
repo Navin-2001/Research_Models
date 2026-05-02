@@ -24,11 +24,10 @@ RUN python -c "from transformers import pipeline; \
     pipeline('text-classification', model='j-hartmann/emotion-english-distilroberta-base'); \
     pipeline('automatic-speech-recognition', model='openai/whisper-tiny.en')"
 
-# Pre-download DeepFace models (VGG-Face is default)
+# Pre-download DeepFace models (Emotion model)
 RUN python -c "from deepface import DeepFace; \
-    import os; \
-    os.makedirs(os.path.join(os.path.expanduser('~'), '.deepface', 'weights'), exist_ok=True); \
-    DeepFace.build_model('Emotion')"
+    import numpy as np; \
+    DeepFace.analyze(img_path=np.zeros((224, 224, 3), dtype=np.uint8), actions=['emotion'], enforce_detection=False)"
 
 # Copy application files
 COPY . .
