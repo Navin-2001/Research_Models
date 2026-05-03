@@ -32,7 +32,7 @@ HF_TOKEN = os.getenv("HF_TOKEN")
 API_URL_VOICE = "https://api-inference.huggingface.co/models/superb/wav2vec2-base-superb-er"
 # Using a more stable model for chat emotion
 API_URL_CHAT = "https://api-inference.huggingface.co/models/bhadresh-savani/distilbert-base-uncased-emotion"
-API_URL_WHISPER = "https://api-inference.huggingface.co/models/openai/whisper-tiny.en"
+API_URL_WHISPER = "https://api-inference.huggingface.co/models/openai/whisper-tiny"
 
 # Lazy load DeepFace to save RAM on startup
 deepface_detect_emotion = None
