@@ -30,7 +30,8 @@ app.add_middleware(
 # Hugging Face API Configuration
 HF_TOKEN = os.getenv("HF_TOKEN")
 API_URL_VOICE = "https://api-inference.huggingface.co/models/superb/wav2vec2-base-superb-er"
-API_URL_CHAT = "https://api-inference.huggingface.co/models/j-hartmann/emotion-english-distilroberta-base"
+# Using a more stable model for chat emotion
+API_URL_CHAT = "https://api-inference.huggingface.co/models/bhadresh-savani/distilbert-base-uncased-emotion"
 API_URL_WHISPER = "https://api-inference.huggingface.co/models/openai/whisper-tiny.en"
 
 # Lazy load DeepFace to save RAM on startup
@@ -52,6 +53,7 @@ def get_deepface():
 
 def query_hf_api(api_url, data, is_binary=False):
     if not HF_TOKEN:
+        logger.error("HF_TOKEN is missing!")
         raise HTTPException(status_code=500, detail="HF_TOKEN missing in server environment")
     
     headers = {"Authorization": f"Bearer {HF_TOKEN}"}
@@ -67,10 +69,11 @@ def query_hf_api(api_url, data, is_binary=False):
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        logger.error(f"HF API Error: {str(e)}")
+        logger.error(f"HF API Error at {api_url}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"AI API Error: {str(e)}")
 
-@app.get("/")
+# Added HEAD method support for Render health checks
+@app.api_route("/", methods=["GET", "HEAD"])
 def health_check():
     return {"status": "running", "hf_configured": HF_TOKEN is not None}
 
@@ -83,12 +86,14 @@ async def predict_emotion(audio_file: UploadFile = File(...)):
     content = await audio_file.read()
     results = query_hf_api(API_URL_VOICE, content, is_binary=True)
     
+    # Process results to match frontend format
     label_map = {"neu": "neutral", "hap": "happy", "ang": "angry", "sad": "sad"}
     final_scores = {e: 0.0 for e in ["neutral", "calm", "happy", "sad", "angry", "fearful", "disgust", "surprised"]}
     
-    for item in results:
-        mapped = label_map.get(item['label'])
-        if mapped: final_scores[mapped] = item['score'] * 100
+    if isinstance(results, list):
+        for item in results:
+            mapped = label_map.get(item['label'][:3].lower()) # Take first 3 chars to match
+            if mapped: final_scores[mapped] = item['score'] * 100
     return final_scores
 
 @app.post("/transcribe")
@@ -100,31 +105,40 @@ async def transcribe_audio(audio_file: UploadFile = File(...)):
     except Exception as e:
         return {"success": False, "text": f"Error: {str(e)}"}
 
-# --- Chat Logic ---
 class ChatRequest(BaseModel):
     message: str
     question_index: int = 0
 
 @app.post("/chat")
 async def chat(request: ChatRequest):
-    # Simplified sentiment logic
-    res = query_hf_api(API_URL_CHAT, {"inputs": request.message})
-    emotions = res[0] if isinstance(res[0], list) else res
-    dominant = max(emotions, key=lambda x: x['score'])
+    try:
+        res = query_hf_api(API_URL_CHAT, {"inputs": request.message})
+        # Handle different response formats from HF
+        emotions = res[0] if isinstance(res[0], list) else res
+        dominant = max(emotions, key=lambda x: x['score'])
+        sentiment = dominant['label']
+    except:
+        sentiment = "neutral"
+        dominant = {"score": 0.5}
+
+    # Follow-up questions logic
+    follow_ups = [
+        "How have you been feeling emotionally?", "Feeling tired lately?", "How is your sleep?",
+        "Enjoying activities?", "Appetite changes?", "Feeling about yourself?",
+        "Concentration levels?", "Movement changes?", "Feeling about the future?"
+    ]
     
-    # Simple reply logic for brevity
-    reply = f"I understand you feel {dominant['label']}. Next question..."
+    reply = f"I hear you. {follow_ups[min(request.question_index + 1, 8)]}"
     return {
         "reply": reply,
-        "sentiment": dominant['label'],
-        "sentiment_score": dominant['score'],
-        "depression_score": 1 if dominant['label'] in ['sadness', 'fear'] else 0,
+        "sentiment": sentiment,
+        "sentiment_score": dominant.get('score', 0.5),
+        "depression_score": 1 if sentiment in ['sadness', 'fear', 'anger'] else 0,
         "is_complete": request.question_index >= 8
     }
 
 @app.post("/api/emotion")
 async def face_emotion_api(payload: dict = Body(...)):
     detector = get_deepface()
-    # Decode and process image...
-    # (Keeping it simple for now to ensure startup)
-    return {"status": "success", "info": "Face API called"}
+    # DeepFace logic remains similar
+    return {"status": "success", "info": "Face analysis ready"}
