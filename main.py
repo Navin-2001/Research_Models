@@ -32,7 +32,7 @@ HF_TOKEN = os.getenv("HF_TOKEN")
 API_URL_VOICE = "https://api-inference.huggingface.co/models/superb/wav2vec2-base-superb-er"
 # Using a more stable model for chat emotion
 API_URL_CHAT = "https://api-inference.huggingface.co/models/bhadresh-savani/distilbert-base-uncased-emotion"
-API_URL_WHISPER = "https://api-inference.huggingface.co/models/facebook/wav2vec2-base-960h"
+API_URL_WHISPER = "https://api-inference.huggingface.co/models/openai/whisper-base"
 
 # Lazy load DeepFace to save RAM on startup
 deepface_detect_emotion = None
@@ -101,9 +101,16 @@ async def transcribe_audio(audio_file: UploadFile = File(...)):
     content = await audio_file.read()
     try:
         result = query_hf_api(API_URL_WHISPER, content, is_binary=True)
-        return {"success": True, "text": result.get("text", "").strip()}
+        if isinstance(result, dict):
+            text = result.get("text", "")
+        elif isinstance(result, list) and len(result) > 0:
+            text = result[0].get("generated_text", result[0].get("text", ""))
+        else:
+            text = ""
+        return {"success": True, "text": text.strip()}
     except Exception as e:
-        return {"success": False, "text": f"Error: {str(e)}"}
+        logger.warning(f"Transcription failed (non-critical): {str(e)}")
+        return {"success": False, "text": ""}
 
 class ChatRequest(BaseModel):
     message: str
